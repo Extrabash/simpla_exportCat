@@ -310,6 +310,16 @@ class ImportAjax extends Simpla
  			foreach($images as $image)
  			{
  				$image = trim($image);
+
+				$download_image = false;
+
+				if(stristr($image, 'http') && stristr($image, '%2F'))
+				{
+					$image = urldecode($image);
+					// Если это ссылка, то нужно скачать файл
+					$download_image = true;
+				}
+
  				if(!empty($image))
  				{
 	 				// Имя файла
@@ -320,6 +330,8 @@ class ImportAjax extends Simpla
 					if(!$this->db->result('filename'))
 					{
 						$this->products->add_image($product_id, $image);
+						if($download_image)
+							$this->image->download_image($image);
 					}
 				}
  			}

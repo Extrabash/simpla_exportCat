@@ -68,7 +68,14 @@ class ExportAjax extends Simpla
 		
 		// Все товары
 		$products = array();
- 		foreach($this->products->get_products(array('page'=>$page, 'limit'=>$this->products_count)) as $p)
+
+		// Получим категории если нужны, соберем массив
+		$filter_categories = $this->request->get('filter_categories');
+		$filter = array('page'=>$page, 'limit'=>$this->products_count);
+		if(!empty($filter_categories))
+			$filter['category_id'] = $filter_categories;
+
+ 		foreach($this->products->get_products($filter) as $p)
  		{
  			$products[$p->id] = (array)$p;
  			
@@ -109,8 +116,12 @@ class ExportAjax extends Simpla
  		
  		// Изображения товаров
  		$images = $this->products->get_images(array('product_id'=>array_keys($products)));
+		$img_domain = $this->request->get('img_domain');
  		foreach($images as $image)
  		{
+			if(!empty($img_domain))
+				$image->filename = urlencode($img_domain.'/files/originals/'.$image->filename);
+			
  			// Добавляем изображения к товару чезер запятую
  			if(empty($products[$image->product_id]['images']))
  				$products[$image->product_id]['images'] = $image->filename;
@@ -172,7 +183,11 @@ class ExportAjax extends Simpla
 	 		}
 		}
 		
-		$total_products = $this->products->count_products();
+		$count_filter = array();
+		if(!empty($filter_categories))
+			$count_filter['category_id'] = $filter_categories;
+			
+		$total_products = $this->products->count_products($count_filter);
 		
 		if($this->products_count*$page < $total_products)
 			return array('end'=>false, 'page'=>$page, 'totalpages'=>$total_products/$this->products_count);
